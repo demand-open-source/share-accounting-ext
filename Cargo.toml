@@ -1,0 +1,18 @@
+[package]
+name = "demand-share-accounting-ext"
+version = "0.0.1"
+authors = ["fi3 <email@email.org>"]
+edition = "2021"
+description = "Sv2 share accounting extension"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/demand-open-source/demand-share-accounting-ext"
+
+[dependencies]
+serde = { version = "1.0.89", default-features = false, optional= true }
+binary_sv2 = "1.1.0"
+#binary_sv2 = { version = "1.1.0", path = "../stratum/protocols/v2/binary-sv2/binary-sv2"}
+const_sv2 = "2.0.0"
+
+[features]
+no_std = []
+with_serde = ["binary_sv2/with_serde", "serde"]
