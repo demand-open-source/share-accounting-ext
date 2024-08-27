@@ -272,27 +272,34 @@ impl<'a> IsSv2Message for PoolExtMessages<'a> {
     }
 }
 
-impl<'a> TryFrom<(u8, &'a mut [u8])> for PoolExtMessages<'a> {
+impl<'a> TryFrom<(u16, u8, &'a mut [u8])> for PoolExtMessages<'a> {
     type Error = Error;
 
-    fn try_from(v: (u8, &'a mut [u8])) -> Result<Self, Self::Error> {
-        let is_common: Result<CommonMessageTypes, Error> = v.0.try_into();
-        let is_mining: Result<MiningTypes, Error> = v.0.try_into();
-        let is_job_declaration: Result<JobDeclarationTypes, Error> = v.0.try_into();
-        let is_share_accounting: Result<ShareAccountingMessagesTypes, Error> = v.0.try_into();
-        match (
-            is_common,
-            is_mining,
-            is_job_declaration,
-            is_share_accounting,
-        ) {
-            (Ok(_), Err(_), Err(_), Err(_)) => Ok(Self::Common(v.try_into()?)),
-            (Err(_), Ok(_), Err(_), Err(_)) => Ok(Self::Mining(v.try_into()?)),
-            (Err(_), Err(_), Ok(_), Err(_)) => Ok(Self::JobDeclaration(v.try_into()?)),
-            (Err(_), Err(_), Err(_), Ok(_)) => Ok(Self::ShareAccountingMessages(v.try_into()?)),
-            (Err(e), Err(_), Err(_), Err(_)) => Err(e),
-            // This is an impossible state is safe to panic here
-            _ => panic!(),
+    // extension, message_type, payload -> PoolExtMessages
+    fn try_from(v: (u16, u8, &'a mut [u8])) -> Result<Self, Self::Error> {
+        // This must be like that and not comparing to the actual no extension number (0) cause
+        // framing extension channel bit is broken
+        //if v.0 != 0 {
+        if v.0 != EXTENSION_TYPE {
+            let is_common: Result<CommonMessageTypes, Error> = v.1.try_into();
+            let is_mining: Result<MiningTypes, Error> = v.1.try_into();
+            let is_job_declaration: Result<JobDeclarationTypes, Error> = v.1.try_into();
+            match (is_common, is_mining, is_job_declaration) {
+                (Ok(_), Err(_), Err(_)) => Ok(Self::Common((v.1, v.2).try_into()?)),
+                (Err(_), Ok(_), Err(_)) => Ok(Self::Mining((v.1, v.2).try_into()?)),
+                (Err(_), Err(_), Ok(_)) => Ok(Self::JobDeclaration((v.1, v.2).try_into()?)),
+                (Err(e), Err(_), Err(_)) => Err(e),
+                // This is an impossible state is safe to panic here
+                _ => panic!(),
+            }
+        // This is possible since channle bit is never set for this extension
+        } else if v.0 == EXTENSION_TYPE {
+            Ok(Self::ShareAccountingMessages((v.1, v.2).try_into()?))
+        }
+        // TODO this will be possible when ext managment in framing (channl bit) will be fixed
+        else {
+            // TODO add UnexpectedExtension message to roles_logic_sv2
+            Err(Error::UnexpectedMessage(v.1))
         }
     }
 }
@@ -303,7 +310,10 @@ impl<'decoder, B: AsMut<[u8]> + AsRef<[u8]>> TryFrom<PoolExtMessages<'decoder>>
     type Error = Error;
 
     fn try_from(v: PoolExtMessages<'decoder>) -> Result<Self, Error> {
-        let extension_type = 0;
+        let extension_type = match v {
+            PoolExtMessages::ShareAccountingMessages(_) => EXTENSION_TYPE,
+            _ => 0,
+        };
         let channel_bit = v.channel_bit();
         let message_type = v.message_type();
         Sv2Frame::from_message(v, message_type, extension_type, channel_bit)
