@@ -333,3 +333,131 @@ impl<'a> TryFrom<PoolExtMessages<'a>> for MiningDeviceMessages<'a> {
         }
     }
 }
+
+impl<'s> PoolExtMessages<'s> {
+    pub fn into_static(self) -> PoolExtMessages<'static> {
+        match self {
+            PoolExtMessages::Common(a) => match a {
+                CommonMessages::ChannelEndpointChanged(m) => {
+                    PoolExtMessages::Common(CommonMessages::ChannelEndpointChanged(m.into_static()))
+                }
+                CommonMessages::SetupConnection(m) => {
+                    PoolExtMessages::Common(CommonMessages::SetupConnection(m.into_static()))
+                }
+                CommonMessages::SetupConnectionError(m) => {
+                    PoolExtMessages::Common(CommonMessages::SetupConnectionError(m.into_static()))
+                }
+                CommonMessages::SetupConnectionSuccess(m) => {
+                    PoolExtMessages::Common(CommonMessages::SetupConnectionSuccess(m.into_static()))
+                }
+            },
+            PoolExtMessages::Mining(a) => PoolExtMessages::Mining(a.into_static()),
+            PoolExtMessages::JobDeclaration(a) => match a {
+                JobDeclaration::AllocateMiningJobToken(m) => PoolExtMessages::JobDeclaration(
+                    JobDeclaration::AllocateMiningJobToken(m.into_static()),
+                ),
+                JobDeclaration::AllocateMiningJobTokenSuccess(m) => {
+                    PoolExtMessages::JobDeclaration(JobDeclaration::AllocateMiningJobTokenSuccess(
+                        m.into_static(),
+                    ))
+                }
+                JobDeclaration::DeclareMiningJob(m) => PoolExtMessages::JobDeclaration(
+                    JobDeclaration::DeclareMiningJob(m.into_static()),
+                ),
+                JobDeclaration::DeclareMiningJobError(m) => PoolExtMessages::JobDeclaration(
+                    JobDeclaration::DeclareMiningJobError(m.into_static()),
+                ),
+                JobDeclaration::DeclareMiningJobSuccess(m) => PoolExtMessages::JobDeclaration(
+                    JobDeclaration::DeclareMiningJobSuccess(m.into_static()),
+                ),
+                JobDeclaration::IdentifyTransactions(m) => PoolExtMessages::JobDeclaration(
+                    JobDeclaration::IdentifyTransactions(m.into_static()),
+                ),
+                JobDeclaration::IdentifyTransactionsSuccess(m) => PoolExtMessages::JobDeclaration(
+                    JobDeclaration::IdentifyTransactionsSuccess(m.into_static()),
+                ),
+                JobDeclaration::ProvideMissingTransactions(m) => PoolExtMessages::JobDeclaration(
+                    JobDeclaration::ProvideMissingTransactions(m.into_static()),
+                ),
+                JobDeclaration::ProvideMissingTransactionsSuccess(m) => {
+                    PoolExtMessages::JobDeclaration(
+                        JobDeclaration::ProvideMissingTransactionsSuccess(m.into_static()),
+                    )
+                }
+                JobDeclaration::SubmitSolution(m) => {
+                    PoolExtMessages::JobDeclaration(JobDeclaration::SubmitSolution(m.into_static()))
+                }
+            },
+            PoolExtMessages::TemplateDistribution(a) => match a {
+                TemplateDistribution::CoinbaseOutputDataSize(m) => {
+                    PoolExtMessages::TemplateDistribution(
+                        TemplateDistribution::CoinbaseOutputDataSize(m.into_static()),
+                    )
+                }
+                TemplateDistribution::NewTemplate(m) => PoolExtMessages::TemplateDistribution(
+                    TemplateDistribution::NewTemplate(m.into_static()),
+                ),
+                TemplateDistribution::RequestTransactionData(m) => {
+                    PoolExtMessages::TemplateDistribution(
+                        TemplateDistribution::RequestTransactionData(m.into_static()),
+                    )
+                }
+                TemplateDistribution::RequestTransactionDataError(m) => {
+                    PoolExtMessages::TemplateDistribution(
+                        TemplateDistribution::RequestTransactionDataError(m.into_static()),
+                    )
+                }
+                TemplateDistribution::RequestTransactionDataSuccess(m) => {
+                    PoolExtMessages::TemplateDistribution(
+                        TemplateDistribution::RequestTransactionDataSuccess(m.into_static()),
+                    )
+                }
+                TemplateDistribution::SetNewPrevHash(m) => PoolExtMessages::TemplateDistribution(
+                    TemplateDistribution::SetNewPrevHash(m.into_static()),
+                ),
+                TemplateDistribution::SubmitSolution(m) => PoolExtMessages::TemplateDistribution(
+                    TemplateDistribution::SubmitSolution(m.into_static()),
+                ),
+            },
+            PoolExtMessages::ShareAccountingMessages(a) => match a {
+                ShareAccountingMessages::ShareOk(m) => PoolExtMessages::ShareAccountingMessages(
+                    ShareAccountingMessages::ShareOk(m.into_static()),
+                ),
+                ShareAccountingMessages::NewBlockFound(m) => {
+                    PoolExtMessages::ShareAccountingMessages(
+                        ShareAccountingMessages::NewBlockFound(m.into_static()),
+                    )
+                }
+                ShareAccountingMessages::GetWindow(m) => PoolExtMessages::ShareAccountingMessages(
+                    ShareAccountingMessages::GetWindow(m.into_static()),
+                ),
+                ShareAccountingMessages::GetWindowSuccess(m) => {
+                    PoolExtMessages::ShareAccountingMessages(
+                        ShareAccountingMessages::GetWindowSuccess(m.into_static()),
+                    )
+                }
+                ShareAccountingMessages::GetWindowBusy(m) => {
+                    PoolExtMessages::ShareAccountingMessages(
+                        ShareAccountingMessages::GetWindowBusy(m.into_static()),
+                    )
+                }
+                ShareAccountingMessages::GetShares(m) => PoolExtMessages::ShareAccountingMessages(
+                    ShareAccountingMessages::GetShares(m.into_static()),
+                ),
+                ShareAccountingMessages::GetSharesSuccess(m) => {
+                    PoolExtMessages::ShareAccountingMessages(
+                        ShareAccountingMessages::GetSharesSuccess(m.into_static()),
+                    )
+                }
+                ShareAccountingMessages::NewTxs(m) => PoolExtMessages::ShareAccountingMessages(
+                    ShareAccountingMessages::NewTxs(m.into_static()),
+                ),
+                ShareAccountingMessages::ErrorMessage(m) => {
+                    PoolExtMessages::ShareAccountingMessages(ShareAccountingMessages::ErrorMessage(
+                        m.into_static(),
+                    ))
+                }
+            },
+        }
+    }
+}
