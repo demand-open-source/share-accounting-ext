@@ -120,6 +120,18 @@ impl<'decoder> Deserialize<'decoder> for ShareAccountingMessages<'decoder> {
     }
 }
 
+#[cfg(not(feature = "with_serde"))]
+impl<'decoder> Deserialize<'decoder> for PoolExtMessages<'decoder> {
+    fn get_structure(_v: &[u8]) -> std::result::Result<Vec<FieldMarker>, binary_sv2::Error> {
+        unimplemented!()
+    }
+    fn from_decoded_fields(
+        _v: Vec<DecodableField<'decoder>>,
+    ) -> std::result::Result<Self, binary_sv2::Error> {
+        unimplemented!()
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 #[repr(u8)]
 #[allow(clippy::enum_variant_names)]
