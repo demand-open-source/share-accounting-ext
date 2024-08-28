@@ -284,15 +284,18 @@ impl<'a> IsSv2Message for PoolExtMessages<'a> {
     }
 }
 
+fn ingnore_channel_bit(ext: u16) -> u16 {
+    let mask = 0b0111_1111_1111_1111;
+    ext & mask
+}
+
 impl<'a> TryFrom<(u16, u8, &'a mut [u8])> for PoolExtMessages<'a> {
     type Error = Error;
 
     // extension, message_type, payload -> PoolExtMessages
     fn try_from(v: (u16, u8, &'a mut [u8])) -> Result<Self, Self::Error> {
-        // This must be like that and not comparing to the actual no extension number (0) cause
-        // framing extension channel bit is broken
-        //if v.0 != 0 {
-        if v.0 != EXTENSION_TYPE {
+        let extension = ingnore_channel_bit(v.0);
+        if extension == 0 {
             let is_common: Result<CommonMessageTypes, Error> = v.1.try_into();
             let is_mining: Result<MiningTypes, Error> = v.1.try_into();
             let is_job_declaration: Result<JobDeclarationTypes, Error> = v.1.try_into();
@@ -305,10 +308,9 @@ impl<'a> TryFrom<(u16, u8, &'a mut [u8])> for PoolExtMessages<'a> {
                 _ => panic!(),
             }
         // This is possible since channle bit is never set for this extension
-        } else if v.0 == EXTENSION_TYPE {
+        } else if extension == EXTENSION_TYPE {
             Ok(Self::ShareAccountingMessages((v.1, v.2).try_into()?))
         }
-        // TODO this will be possible when ext managment in framing (channl bit) will be fixed
         else {
             // TODO add UnexpectedExtension message to roles_logic_sv2
             Err(Error::UnexpectedMessage(v.1))
