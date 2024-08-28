@@ -219,7 +219,7 @@ dependencies = [
 
 [[package]]
 name = "demand-share-accounting-ext"
-version = "0.0.8"
+version = "0.0.9"
 dependencies = [
  "binary_sv2",
  "const_sv2 2.0.0",

@@ -15,8 +15,9 @@ use crate::Share;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[repr(C)]
 pub struct GetShares<'decoder> {
+    pub request_id: u32,
     #[cfg_attr(feature = "with_serde", serde(borrow))]
-    pub shares: Seq064K<'decoder, u64>,
+    pub shares: Seq064K<'decoder, u32>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -79,7 +80,7 @@ impl<'decoder> GetSharesSuccess<'decoder> {
 #[cfg(feature = "with_serde")]
 impl<'d> GetSize for GetShares<'d> {
     fn get_size(&self) -> usize {
-        self.shares.get_size()
+        self.shares.get_size() + self.request_id.get_size()
     }
 }
 #[cfg(feature = "with_serde")]

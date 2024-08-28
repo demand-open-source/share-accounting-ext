@@ -10,14 +10,26 @@ use core::convert::TryInto;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[repr(C)]
-pub struct ShareOk {
-    pub ref_job_id: u64,
-    pub share_index: u32,
+pub struct Activate {
+    pub request_id: u32,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[repr(C)]
+pub struct ActivateSuccess {
+    pub request_id: u32,
 }
 
 #[cfg(feature = "with_serde")]
-impl<'d> GetSize for ShareOk<'d> {
+impl<'d> GetSize for Activate<'d> {
     fn get_size(&self) -> usize {
-        self.ref_job_id.get_size() + self.share_index.get_size()
+        self.request_id.get_size()
+    }
+}
+
+#[cfg(feature = "with_serde")]
+impl<'d> GetSize for ActivateSuccess<'d> {
+    fn get_size(&self) -> usize {
+        self.request_id.get_size()
     }
 }
