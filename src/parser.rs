@@ -310,8 +310,7 @@ impl<'a> TryFrom<(u16, u8, &'a mut [u8])> for PoolExtMessages<'a> {
         // This is possible since channle bit is never set for this extension
         } else if extension == EXTENSION_TYPE {
             Ok(Self::ShareAccountingMessages((v.1, v.2).try_into()?))
-        }
-        else {
+        } else {
             // TODO add UnexpectedExtension message to roles_logic_sv2
             Err(Error::UnexpectedMessage(v.1))
         }

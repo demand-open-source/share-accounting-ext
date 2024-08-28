@@ -1,6 +1,6 @@
 [package]
 name = "demand-share-accounting-ext"
-version = "0.0.7"
+version = "0.0.8"
 authors = ["fi3 <email@email.org>"]
 edition = "2021"
 description = "Sv2 share accounting extension"
