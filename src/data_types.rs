@@ -179,6 +179,7 @@ pub struct Share<'decoder> {
     extranonce: B032<'decoder>,
     job_id: u64,
     reference_job_id: u64,
+    share_index: u32,
     #[cfg_attr(feature = "with_serde", serde(borrow))]
     merkle_path: B064K<'decoder>,
 }
@@ -210,6 +211,7 @@ impl<'d> GetMarker for Share<'d> {
             B032::get_marker(),
             u64::get_marker(),
             u64::get_marker(),
+            u32::get_marker(),
             B064K::get_marker(),
         ];
         FieldMarker::Struct(markers)
@@ -224,6 +226,7 @@ impl<'d> GetSize for Share<'d> {
             + self.extranonce.get_size()
             + self.job_id.get_size()
             + self.reference_job_id.get_size()
+            + self.share_index.get_size()
             + self.merkle_path.get_size()
     }
 }
@@ -254,6 +257,7 @@ impl<'d> Sv2DataType<'d> for Share<'d> {
         let index = extranonce.len() + 12;
         let job_id = u64::from_bytes_unchecked(&mut data[index..index + 8]);
         let reference_job_id = u64::from_bytes_unchecked(&mut data[index + 8..index + 16]);
+        let share_index = u32::from_bytes_unchecked(&mut data[index + 16..]);
         let merkle_path = B064K::from_bytes_unchecked(&mut data[index + 16..]);
         Self {
             nonce,
@@ -262,6 +266,7 @@ impl<'d> Sv2DataType<'d> for Share<'d> {
             extranonce,
             job_id,
             reference_job_id,
+            share_index,
             merkle_path,
         }
     }
@@ -284,6 +289,8 @@ impl<'d> Sv2DataType<'d> for Share<'d> {
         self.job_id.to_slice_unchecked(&mut dst[index..index + 8]);
         self.reference_job_id
             .to_slice_unchecked(&mut dst[index + 8..index + 16]);
-        self.merkle_path.to_slice_unchecked(&mut dst[index + 16..]);
+        self.share_index
+            .to_slice_unchecked(&mut dst[index + 16..index + 20]);
+        self.merkle_path.to_slice_unchecked(&mut dst[index + 20..]);
     }
 }

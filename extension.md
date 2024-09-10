@@ -60,9 +60,9 @@ A share sent by a miner
 | extranonce | B032       | Same as in sv2 mining protocol  |
 | job_id | U64  | id of the job for this slice, the last 4 bytes MUST be the same of the job_id of the respective job |
 | reference_job_id | U64  | id of the ref job for this slice, the last 4 bytes MUST be the same of the job_id of the respective job |
-| root | U256  | merkle root of the tree composed by all the shares in the slice |
 | job_id | U64  | id of the ref job for this slice, the last 4 bytes MUST be the same of the job_id of the respective job |
-| merkle_path | B064K       | Same as in sv2 mining protocol  |
+| share_index | U32  | index of the share relative to the slice |
+| merkle_path | B064K       | path of this share relative to the slice root  |
 
 This extension is an extension of the Mining StratumV2 protocol and message defined here MUST be
 sent over an already setup mining connection. 
