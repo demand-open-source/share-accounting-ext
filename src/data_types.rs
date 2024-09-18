@@ -172,16 +172,16 @@ impl GetSize for Hash256 {
 #[already_sized]
 #[repr(C)]
 pub struct Share<'decoder> {
-    nonce: u32,
-    ntime: u32,
-    version: u32,
+    pub nonce: u32,
+    pub ntime: u32,
+    pub version: u32,
     #[cfg_attr(feature = "with_serde", serde(borrow))]
-    extranonce: B032<'decoder>,
-    job_id: u64,
-    reference_job_id: u64,
-    share_index: u32,
+    pub extranonce: B032<'decoder>,
+    pub job_id: u64,
+    pub reference_job_id: u64,
+    pub share_index: u32,
     #[cfg_attr(feature = "with_serde", serde(borrow))]
-    merkle_path: B064K<'decoder>,
+    pub merkle_path: B064K<'decoder>,
 }
 
 impl<'a> Share<'a> {
