@@ -6,7 +6,7 @@ use binary_sv2::{encodable::EncodableField, Deserialize, GetSize, Seq064K, Seria
 #[cfg(not(feature = "with_serde"))]
 use core::convert::TryInto;
 
-use crate::Slice;
+use crate::{PHash, Slice};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[repr(C)]
@@ -20,12 +20,15 @@ pub struct GetWindow<'decoder> {
 pub struct GetWindowSuccess<'decoder> {
     #[cfg_attr(feature = "with_serde", serde(borrow))]
     pub slices: Seq064K<'decoder, Slice>,
+    #[cfg_attr(feature = "with_serde", serde(borrow))]
+    pub phashes: Seq064K<'decoder, PHash>,
 }
 impl<'decoder> From<GetWindowSuccess<'decoder>> for EncodableField<'decoder> {
     fn from(v: GetWindowSuccess<'decoder>) -> Self {
-        let mut fields: Vec<EncodableField> = Vec::new();
-        let val = v.slices;
-        fields.push(crate::Slice::seq_into_encodable_field(val));
+        let fields = vec![
+            crate::Slice::seq_into_encodable_field(v.slices),
+            PHash::seq_into_encodable_field(v.phashes),
+        ];
         Self::Struct(fields)
     }
 }
@@ -33,6 +36,7 @@ impl<'decoder> GetSize for GetWindowSuccess<'decoder> {
     fn get_size(&self) -> usize {
         let mut size = 0;
         size += self.slices.get_size();
+        size += self.phashes.get_size();
         size
     }
 }
@@ -52,7 +56,7 @@ impl<'d> GetSize for GetWindow<'d> {
 #[cfg(feature = "with_serde")]
 impl<'d> GetSize for GetWindowSuccess<'d> {
     fn get_size(&self) -> usize {
-        self.slices.get_size()
+        self.slices.get_size() + self.phashes.get_size()
     }
 }
 #[cfg(feature = "with_serde")]

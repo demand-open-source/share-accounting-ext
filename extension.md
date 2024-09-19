@@ -9,7 +9,7 @@ based both on selected transactions and hash power provided.
 
 This document proposes an extension of StratumV2, that can be used by the miner to verify pool's
 payout. Through this sv2 extension is possible to implement the system proposed in 
-[here](https://github.com/demand-open-source/pplns-with-job-declaration/blob/master/pplns-with-job-declaration.pdf).
+[here](https://www.dmnd.work/pplns-with-job-declaration/pplns-with-job-declaration.pdf).
 
 The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", 
 "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in RFC2119.
@@ -26,14 +26,14 @@ follow the below step in order to do that:
 1. randomly select some slice that he is willing to check
 for each selected slice:
     1. randomly select some share in the slice
-    2. fetch the job and the transactions that are not in the cache for each selected share
+    2. fetch the transactions that are not in the cache for each selected share
     3. verify that each share is valid
     4. verify that merkle path of each share + share hash = root in the Slice
     5. verify that the sum of the diff verified shares is not bigger then the Slice diff
     6. verify that the fees in the shares are lower than fees of the Slice ref job fees + delta
 
 ## 1.1 Data Types
-This extension introduce 2 datatypes:
+This extension introduce 3 datatypes:
 
 ### Slice
 
@@ -45,7 +45,7 @@ approximated as a constant.
 | number_of_shares | U32       | How many shares are in the slice  |
 | difficulty | U64  | sum of all the difficulties of the shares that compose the slice |
 | fees | U64  | fees of the ref job for this slice |
-| root | U256  | merkle root of the tree composed by all the shares in the slice |
+| root | Hash256  | merkle root of the tree composed by all the shares in the slice |
 | job_id | U64  | id of the ref job for this slice, the last 4 bytes MUST be the same of the job_id of the respective job |
 
 ### Share
@@ -60,9 +60,20 @@ A share sent by a miner
 | extranonce | B032       | Same as in sv2 mining protocol  |
 | job_id | U64  | id of the job for this slice, the last 4 bytes MUST be the same of the job_id of the respective job |
 | reference_job_id | U64  | id of the ref job for this slice, the last 4 bytes MUST be the same of the job_id of the respective job |
-| job_id | U64  | id of the ref job for this slice, the last 4 bytes MUST be the same of the job_id of the respective job |
 | share_index | U32  | index of the share relative to the slice |
 | merkle_path | B064K       | path of this share relative to the slice root  |
+
+### PHash
+
+The PHash message includes the previous hash and the starting index of the slices that use it. This
+message is sent within the GetWindowSuccess response, enabling the miner to identify which slices 
+correspond to which previous hash, and thereby determine the previous hash for each share. This
+information is essential for verifying the work of each share.
+
+| Field Name | Data Type | Description                                                 |
+| ---------- | --------- | ----------------------------------------------------------- |
+| phash | Hash256       | The previous hash (32-byte binary value)  |
+| index_start | u32  | The index of the first share in the window that use this `phash` |
 
 This extension is an extension of the Mining StratumV2 protocol and message defined here MUST be
 sent over an already setup mining connection. 
@@ -125,22 +136,32 @@ Pools should reply with `GetWindow.Success` for last windows, for older window p
 answer with `GetWindow.Busy`. Pool must not reply with `GeneralError` for valid request a valid
 request is a request that have as block_hash the hash of a block found by the pool.
 
+
 | Field Name | Data Type | Description                                                 |
 | ---------- | --------- | ----------------------------------------------------------- |
 | request_id | U32  | Unique identifier for pairing the response |
-| block_hash | U256  | block hash of the block that have been found by the pool, for which we are requiring the window |
+| block_hash | U256  | Block hash of the block that have been found by the pool, for which we are requiring the window |
 
 ## GetWindowSuccess (Server -> Client)
 
-First slice (`slice[start]`) must be the first one for which: 
-  `sum(slice[start].diff,..., slice[end - 1].diff) >= N * window_size`
-Last slice (`slice[end]`) is the slice that have the share that do find a valid block.
-Last slice is not used to calculate the reward.
+The `GetWindowSuccess` message is sent from the server to the client in response to a `GetWindow` 
+request, indicating that the requested window of slices has been successfully retrieved.
+
+### Slice Definitions
+
+* **First Slice (slice[start])**: This is the first slice in the window where the cumulative difficulty
+  from slice[start] to slice[end - 1] meets or exceeds N × window_size. Formally:
+  ```python
+  sum(slice[start].diff, ..., slice[end - 1].diff) ≥ N × window_size
+
+* **Last Slice (slice[end])**: This is the slice that contains the share which found a valid block.
+  Note that this last slice is not used in reward calculations.
 
 | Field Name | Data Type | Description                                                 |
 | ---------- | --------- | ----------------------------------------------------------- |
-| request_id | U32  | Unique identifier for pairing the response |
-| slices | SEQ0_64K[SLICE]  | list of all the slices contained in the window |
+| request_id | U32  | Unique identifier to match the response with its corresponding request |
+| slices | SEQ0_64K[SLICE]  | list of all the slices included in the window |
+| phashes | SEQ0_64K[PHASH]  | List of all previous hashes (`phash`) in the window, along with the index of the first slice that uses each `phash` |
 
 ## GetWindowBusy (Server -> Client)
 

@@ -17,7 +17,7 @@ mod verify_fees;
 
 pub use crate::r#const::*;
 pub use activate_ext::{Activate, ActivateSuccess};
-pub use data_types::{Hash256, Share, Slice};
+pub use data_types::{Hash256, PHash, Share, Slice};
 pub use error_message::ErrorMessage;
 pub use get_shares::{GetShares, GetSharesSuccess};
 pub use get_window::{GetWindow, GetWindowBusy, GetWindowSuccess};
