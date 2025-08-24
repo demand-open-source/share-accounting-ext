@@ -3,28 +3,22 @@
 #[macro_use]
 extern crate alloc;
 
-mod activate_ext;
 mod r#const;
 mod data_types;
-mod error_message;
-mod get_shares;
-mod get_window;
-mod new_block_found;
-mod new_txs;
 pub mod parser;
-mod share_ok;
-mod verify_fees;
+mod messages;
 
 pub use crate::r#const::*;
-pub use activate_ext::{Activate, ActivateSuccess};
+pub use messages::activate_ext::{Activate, ActivateSuccess};
 pub use data_types::{Hash256, PHash, Share, Slice};
-pub use error_message::ErrorMessage;
-pub use get_shares::{GetShares, GetSharesSuccess};
-pub use get_window::{GetWindow, GetWindowBusy, GetWindowSuccess};
-pub use new_block_found::NewBlockFound;
-pub use new_txs::NewTxs;
-pub use share_ok::ShareOk;
-pub use verify_fees::{
+pub use messages::error_message::ErrorMessage;
+pub use messages::get_shares::{GetShares, GetSharesSuccess};
+pub use messages::get_window::{GetWindow, GetWindowBusy, GetWindowSuccess};
+pub use messages::error_message;
+pub use messages::new_block_found::NewBlockFound;
+pub use messages::new_txs::NewTxs;
+pub use messages::share_ok::ShareOk;
+pub use messages::verify_fees::{
     GetTransationsInJob, GetTransationsInJobSuccess, IdentifyTransations,
     IdentifyTransationsSuccess, ProvideMissinTransactions, ProvideMissinTransactionsSuccess,
 };

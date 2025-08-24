@@ -16,12 +16,12 @@ use roles_logic_sv2::Error;
 
 use framing_sv2::framing::Sv2Frame;
 
-use crate::error_message::ErrorMessage;
-use crate::get_shares::{GetShares, GetSharesSuccess};
-use crate::get_window::{GetWindow, GetWindowBusy, GetWindowSuccess};
-use crate::new_block_found::NewBlockFound;
-use crate::new_txs::NewTxs;
-use crate::share_ok::ShareOk;
+use crate::messages::error_message::ErrorMessage;
+use crate::messages::get_shares::{GetShares, GetSharesSuccess};
+use crate::messages::get_window::{GetWindow, GetWindowBusy, GetWindowSuccess};
+use crate::messages::new_block_found::NewBlockFound;
+use crate::messages::new_txs::NewTxs;
+use crate::messages::share_ok::ShareOk;
 
 use crate::r#const::*;
 
