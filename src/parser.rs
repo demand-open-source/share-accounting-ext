@@ -17,6 +17,7 @@ use roles_logic_sv2::Error;
 use framing_sv2::framing::Sv2Frame;
 
 use crate::error_message::ErrorMessage;
+use crate::ext_negotiation::{RequestExtensions, RequestExtensionsError, RequestExtensionsSuccess};
 use crate::get_shares::{GetShares, GetSharesSuccess};
 use crate::get_window::{GetWindow, GetWindowBusy, GetWindowSuccess};
 use crate::new_block_found::NewBlockFound;
@@ -24,6 +25,17 @@ use crate::new_txs::NewTxs;
 use crate::share_ok::ShareOk;
 
 use crate::r#const::*;
+
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
+pub enum ExtensionNegotiationMessages<'a> {
+    #[cfg_attr(feature = "with_serde", serde(borrow))]
+    RequestExtensions(RequestExtensions<'a>),
+    #[cfg_attr(feature = "with_serde", serde(borrow))]
+    RequestExtensionsSuccess(RequestExtensionsSuccess<'a>),
+    #[cfg_attr(feature = "with_serde", serde(borrow))]
+    RequestExtensionsError(RequestExtensionsError<'a>),
+}
 
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
@@ -76,6 +88,24 @@ impl IsSv2Message for ShareAccountingMessages<'_> {
     }
 }
 
+impl IsSv2Message for ExtensionNegotiationMessages<'_> {
+    fn message_type(&self) -> u8 {
+        match self {
+            Self::RequestExtensions(_) => MESSAGE_TYPE_REQUEST_EXTENSIONS,
+            Self::RequestExtensionsSuccess(_) => MESSAGE_TYPE_REQUEST_EXTENSIONS_SUCCESS,
+            Self::RequestExtensionsError(_) => MESSAGE_TYPE_REQUEST_EXTENSIONS_ERROR,
+        }
+    }
+
+    fn channel_bit(&self) -> bool {
+        match self {
+            Self::RequestExtensions(_) => CHANNEL_BIT_REQUEST_EXTENSIONS,
+            Self::RequestExtensionsSuccess(_) => CHANNEL_BIT_REQUEST_EXTENSIONS_SUCCESS,
+            Self::RequestExtensionsError(_) => CHANNEL_BIT_REQUEST_EXTENSIONS_ERROR,
+        }
+    }
+}
+
 #[cfg(not(feature = "with_serde"))]
 impl<'decoder> From<ShareAccountingMessages<'decoder>> for EncodableField<'decoder> {
     fn from(m: ShareAccountingMessages<'decoder>) -> Self {
@@ -92,6 +122,18 @@ impl<'decoder> From<ShareAccountingMessages<'decoder>> for EncodableField<'decod
         }
     }
 }
+
+#[cfg(not(feature = "with_serde"))]
+impl<'decoder> From<ExtensionNegotiationMessages<'decoder>> for EncodableField<'decoder> {
+    fn from(m: ExtensionNegotiationMessages<'decoder>) -> Self {
+        match m {
+            ExtensionNegotiationMessages::RequestExtensions(a) => a.into(),
+            ExtensionNegotiationMessages::RequestExtensionsSuccess(a) => a.into(),
+            ExtensionNegotiationMessages::RequestExtensionsError(a) => a.into(),
+        }
+    }
+}
+
 impl GetSize for ShareAccountingMessages<'_> {
     fn get_size(&self) -> usize {
         match self {
@@ -104,6 +146,16 @@ impl GetSize for ShareAccountingMessages<'_> {
             Self::GetSharesSuccess(a) => a.get_size(),
             Self::NewTxs(a) => a.get_size(),
             Self::ErrorMessage(a) => a.get_size(),
+        }
+    }
+}
+
+impl GetSize for ExtensionNegotiationMessages<'_> {
+    fn get_size(&self) -> usize {
+        match self {
+            Self::RequestExtensions(a) => a.get_size(),
+            Self::RequestExtensionsSuccess(a) => a.get_size(),
+            Self::RequestExtensionsError(a) => a.get_size(),
         }
     }
 }
@@ -147,6 +199,15 @@ pub enum ShareAccountingMessagesTypes {
     ErrorMessage = MESSAGE_TYPE_ERROR_MESSAGE,
 }
 
+#[derive(Debug, Clone, Copy)]
+#[repr(u8)]
+#[allow(clippy::enum_variant_names)]
+pub enum ExtensionNegotiationMessagesTypes {
+    RequestExtensions = MESSAGE_TYPE_REQUEST_EXTENSIONS,
+    RequestExtensionsSuccess = MESSAGE_TYPE_REQUEST_EXTENSIONS_SUCCESS,
+    RequestExtensionsError = MESSAGE_TYPE_REQUEST_EXTENSIONS_ERROR,
+}
+
 impl TryFrom<u8> for ShareAccountingMessagesTypes {
     type Error = Error;
 
@@ -161,6 +222,25 @@ impl TryFrom<u8> for ShareAccountingMessagesTypes {
             MESSAGE_TYPE_GET_SHARES_SUCCESS => Ok(ShareAccountingMessagesTypes::GetSharesSuccess),
             MESSAGE_TYPE_NEW_TXS => Ok(ShareAccountingMessagesTypes::NewTxs),
             MESSAGE_TYPE_ERROR_MESSAGE => Ok(ShareAccountingMessagesTypes::ErrorMessage),
+            _ => Err(Error::UnexpectedMessage(v)),
+        }
+    }
+}
+
+impl TryFrom<u8> for ExtensionNegotiationMessagesTypes {
+    type Error = Error;
+
+    fn try_from(v: u8) -> Result<Self, Self::Error> {
+        match v {
+            MESSAGE_TYPE_REQUEST_EXTENSIONS => {
+                Ok(ExtensionNegotiationMessagesTypes::RequestExtensions)
+            }
+            MESSAGE_TYPE_REQUEST_EXTENSIONS_SUCCESS => {
+                Ok(ExtensionNegotiationMessagesTypes::RequestExtensionsSuccess)
+            }
+            MESSAGE_TYPE_REQUEST_EXTENSIONS_ERROR => {
+                Ok(ExtensionNegotiationMessagesTypes::RequestExtensionsError)
+            }
             _ => Err(Error::UnexpectedMessage(v)),
         }
     }
@@ -212,6 +292,32 @@ impl<'a> TryFrom<(u8, &'a mut [u8])> for ShareAccountingMessages<'a> {
     }
 }
 
+impl<'a> TryFrom<(u8, &'a mut [u8])> for ExtensionNegotiationMessages<'a> {
+    type Error = Error;
+
+    fn try_from(v: (u8, &'a mut [u8])) -> Result<Self, Self::Error> {
+        let msg_type: ExtensionNegotiationMessagesTypes = v.0.try_into()?;
+        match msg_type {
+            ExtensionNegotiationMessagesTypes::RequestExtensions => {
+                let message: RequestExtensions = from_bytes(v.1)?;
+                Ok(ExtensionNegotiationMessages::RequestExtensions(message))
+            }
+            ExtensionNegotiationMessagesTypes::RequestExtensionsSuccess => {
+                let message: RequestExtensionsSuccess = from_bytes(v.1)?;
+                Ok(ExtensionNegotiationMessages::RequestExtensionsSuccess(
+                    message,
+                ))
+            }
+            ExtensionNegotiationMessagesTypes::RequestExtensionsError => {
+                let message: RequestExtensionsError = from_bytes(v.1)?;
+                Ok(ExtensionNegotiationMessages::RequestExtensionsError(
+                    message,
+                ))
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "with_serde", derive(Serialize, Deserialize))]
 pub enum PoolExtMessages<'a> {
@@ -225,6 +331,8 @@ pub enum PoolExtMessages<'a> {
     TemplateDistribution(TemplateDistribution<'a>),
     #[cfg_attr(feature = "with_serde", serde(borrow))]
     ShareAccountingMessages(ShareAccountingMessages<'a>),
+    #[cfg_attr(feature = "with_serde", serde(borrow))]
+    ExtensionNegotiationMessages(ExtensionNegotiationMessages<'a>),
 }
 
 impl<'a> TryFrom<MiningDeviceMessages<'a>> for PoolExtMessages<'a> {
@@ -247,6 +355,7 @@ impl<'decoder> From<PoolExtMessages<'decoder>> for EncodableField<'decoder> {
             PoolExtMessages::JobDeclaration(a) => a.into(),
             PoolExtMessages::TemplateDistribution(a) => a.into(),
             PoolExtMessages::ShareAccountingMessages(a) => a.into(),
+            PoolExtMessages::ExtensionNegotiationMessages(a) => a.into(),
         }
     }
 }
@@ -258,6 +367,7 @@ impl GetSize for PoolExtMessages<'_> {
             PoolExtMessages::JobDeclaration(a) => a.get_size(),
             PoolExtMessages::TemplateDistribution(a) => a.get_size(),
             PoolExtMessages::ShareAccountingMessages(a) => a.get_size(),
+            PoolExtMessages::ExtensionNegotiationMessages(a) => a.get_size(),
         }
     }
 }
@@ -270,6 +380,7 @@ impl IsSv2Message for PoolExtMessages<'_> {
             PoolExtMessages::JobDeclaration(a) => a.message_type(),
             PoolExtMessages::TemplateDistribution(a) => a.message_type(),
             PoolExtMessages::ShareAccountingMessages(a) => a.message_type(),
+            PoolExtMessages::ExtensionNegotiationMessages(a) => a.message_type(),
         }
     }
 
@@ -280,6 +391,7 @@ impl IsSv2Message for PoolExtMessages<'_> {
             PoolExtMessages::JobDeclaration(a) => a.channel_bit(),
             PoolExtMessages::TemplateDistribution(a) => a.channel_bit(),
             PoolExtMessages::ShareAccountingMessages(a) => a.channel_bit(),
+            PoolExtMessages::ExtensionNegotiationMessages(a) => a.channel_bit(),
         }
     }
 }
@@ -308,6 +420,8 @@ impl<'a> TryFrom<(u16, u8, &'a mut [u8])> for PoolExtMessages<'a> {
                 _ => panic!(),
             }
         // This is possible since channle bit is never set for this extension
+        } else if extension == NEGOTIATION_EXTENSION_TYPE {
+            Ok(Self::ExtensionNegotiationMessages((v.1, v.2).try_into()?))
         } else if extension == EXTENSION_TYPE {
             Ok(Self::ShareAccountingMessages((v.1, v.2).try_into()?))
         } else {
@@ -343,6 +457,7 @@ impl<'a> TryFrom<PoolExtMessages<'a>> for MiningDeviceMessages<'a> {
             PoolExtMessages::JobDeclaration(_) => Err(Error::UnexpectedPoolMessage),
             PoolExtMessages::TemplateDistribution(_) => Err(Error::UnexpectedPoolMessage),
             PoolExtMessages::ShareAccountingMessages(_) => Err(Error::UnexpectedPoolMessage),
+            PoolExtMessages::ExtensionNegotiationMessages(_) => Err(Error::UnexpectedPoolMessage),
         }
     }
 }
@@ -463,6 +578,23 @@ impl PoolExtMessages<'_> {
                     PoolExtMessages::ShareAccountingMessages(ShareAccountingMessages::ErrorMessage(
                         m.into_static(),
                     ))
+                }
+            },
+            PoolExtMessages::ExtensionNegotiationMessages(a) => match a {
+                ExtensionNegotiationMessages::RequestExtensions(m) => {
+                    PoolExtMessages::ExtensionNegotiationMessages(
+                        ExtensionNegotiationMessages::RequestExtensions(m.into_static()),
+                    )
+                }
+                ExtensionNegotiationMessages::RequestExtensionsSuccess(m) => {
+                    PoolExtMessages::ExtensionNegotiationMessages(
+                        ExtensionNegotiationMessages::RequestExtensionsSuccess(m.into_static()),
+                    )
+                }
+                ExtensionNegotiationMessages::RequestExtensionsError(m) => {
+                    PoolExtMessages::ExtensionNegotiationMessages(
+                        ExtensionNegotiationMessages::RequestExtensionsError(m.into_static()),
+                    )
                 }
             },
         }
